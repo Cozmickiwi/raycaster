@@ -1,4 +1,4 @@
-use std::{cmp::min, f32::consts::PI};
+use std::{cmp::min, f32::consts::PI, time::Instant};
 
 use pixels::{Pixels, SurfaceTexture};
 use winit::{
@@ -69,6 +69,8 @@ fn main() {
     let mut wasd: [bool; 4] = [false, false, false, false];
     event_loop
         .run(move |event, elwt| {
+            print!("\r");
+            let now = Instant::now();
             raycast(&player, &mut raycaster, pixels.frame_mut(), &window_size);
             pixels.render().unwrap();
             match event {
@@ -142,14 +144,25 @@ fn main() {
             }
             if wasd[0] {
                 let rad = player.angle as f32 * (PI / 180.0);
-                player.y += rad.sin() / 50.0;
-                player.x += rad.cos() / 50.0;
+                let psin = rad.sin() / 50.0;
+                let pcos = rad.cos() / 50.0;
+                let new_x = player.x + pcos;
+                let new_y = player.y + psin;
+                let check_x = (new_x + pcos * 20.0) as usize;
+                let check_y = (new_y + psin * 20.0) as usize;
+                if MAP[check_y][player.x as usize] == 0 {
+                    player.y = new_y;
+                }
+                if MAP[player.y as usize][check_x] == 0 {
+                    player.x = new_x;
+                }
             }
             if wasd[2] {
                 let rad = player.angle as f32 * (PI / 180.0);
                 player.y -= rad.sin() / 50.0;
                 player.x -= rad.cos() / 50.0;
             }
+            print!("{:?}fps", (1.0 / now.elapsed().as_secs_f32()) as u32);
         })
         .unwrap();
 }
@@ -169,13 +182,16 @@ fn draw_square(
     color: [u8; 4],
 ) {
     let w_height = window_size.height;
+    let mut new_x: usize;
+    let mut new_y: usize;
+    let mut pixel_index: usize;
     for row in (0..min(height, window_size.height as usize)).rev() {
         for a in (0..width).step_by(4) {
-            let new_x = x as usize + a;
-            let new_y = w_height as usize - (y as usize + row);
-            let pixel_index = (new_y * window_size.width as usize + (new_x)) * 4;
+            new_x = x as usize + a;
+            new_y = w_height as usize - (y as usize + row);
+            pixel_index = (new_y * window_size.width as usize + (new_x)) * 4;
             if pixel_index > frame.len() - 3 {
-                continue;
+                break;
             }
             for i in frame[pixel_index..pixel_index + 4].chunks_exact_mut(4) {
                 i[0] = color[0];
