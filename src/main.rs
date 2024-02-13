@@ -1,4 +1,4 @@
-use std::cmp::min;
+use std::{cmp::min, f32::consts::PI};
 
 use pixels::{wgpu::Color, Pixels, SurfaceTexture};
 use winit::{
@@ -83,7 +83,7 @@ fn main() {
     //
 
     //            let mut frame = pixels.frame_mut();
-    let mut key_down: &str = "none";
+    let mut wasd: [bool; 4] = [false, false, false, false];
     event_loop
         .run(move |event, elwt| {
             raycast(&player, &mut raycaster, pixels.frame_mut(), &window_size);
@@ -120,7 +120,6 @@ fn main() {
                     // can render here instead.
                     builder.request_redraw();
                 }
-
                 Event::WindowEvent { event, .. } => match event {
                     WindowEvent::KeyboardInput {
                         device_id,
@@ -129,48 +128,59 @@ fn main() {
                     } => match event.physical_key {
                         winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::KeyA) => {
                             if event.state.is_pressed() {
-                                key_down = "a";
+                                wasd[1] = true;
                             } else {
-                                key_down = "none";
+                                wasd[1] = false
                             }
                         }
                         winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::KeyD) => {
                             if event.state.is_pressed() {
-                                key_down = "d";
+                                wasd[3] = true;
                             } else {
-                                key_down = "none";
+                                wasd[3] = false
                             }
                         }
                         winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::KeyW) => {
                             if event.state.is_pressed() {
-                                key_down = "w";
+                                wasd[0] = true;
                             } else {
-                                key_down = "none";
+                                wasd[0] = false
                             }
                         }
                         winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::KeyS) => {
                             if event.state.is_pressed() {
-                                key_down = "s";
+                                wasd[2] = true;
                             } else {
-                                key_down = "none";
+                                wasd[2] = false
                             }
                         }
-                        _ => key_down = "none",
+                        _ => {},
                     },
                     _ => {}
                 },
                 _ => (),
             }
-            if key_down == "a" {
+            if wasd[1] {
                 player.angle -= 1;
                 if player.angle < 0 {
                     player.angle = 360;
                 }
-            } else if key_down == "d" {
+            }
+            if wasd[3] {
                 player.angle += 1;
                 if player.angle > 360 {
                     player.angle = 0;
                 }
+            }
+            if wasd[0] {
+                let rad = player.angle as f32 * (PI / 180.0);
+                player.y += rad.sin() / 50.0;
+                player.x += rad.cos() / 50.0;
+            }
+            if wasd[2] {
+                let rad = player.angle as f32 * (PI / 180.0);
+                player.y -= rad.sin() / 50.0;
+                player.x -= rad.cos() / 50.0;
             }
         })
         .unwrap();
