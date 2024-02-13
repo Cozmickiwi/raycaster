@@ -37,7 +37,7 @@ const MAP: [[u8; 10]; 10] = [
 const SCREEN_WIDTH: u16 = 1500;
 const SCREEN_HEIGHT: u16 = 900;
 const HALF_HEIGHT: u16 = 450;
-const SCALE: u16 = 5;
+const SCALE: u16 = 1;
 
 fn main() {
     let mut player = Player {
@@ -69,24 +69,25 @@ fn main() {
     //draw_square(&mut frame, &window_size, 500, 400, 200, 200);
     //draw_square(&mut frame, &window_size, 300, 150, 100, 50);
     //    raycast(&player, &mut raycaster, frame, &window_size);
-    //    pixels.render().unwrap();
+    let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &builder);
+    let mut pixels = Pixels::new(window_size.width, window_size.height, surface_texture).unwrap();
+    //    pixels.clear_color(Color::BLUE);
+    //pixels.clear_color(Color::RED);
+
+    for pixel in pixels.frame_mut().chunks_exact_mut(4) {
+        pixel[0] = 255; // R
+        pixel[1] = 27; // G
+        pixel[2] = 71; // B
+        pixel[3] = 0xff; // A
+    }
+    //
+
+    //            let mut frame = pixels.frame_mut();
+    let mut key_down: &str = "none";
     event_loop
         .run(move |event, elwt| {
-            let surface_texture =
-                SurfaceTexture::new(window_size.width, window_size.height, &builder);
-            let mut pixels =
-                Pixels::new(window_size.width, window_size.height, surface_texture).unwrap();
-            //    pixels.clear_color(Color::BLUE);
-            //pixels.clear_color(Color::RED);
+            raycast(&player, &mut raycaster, pixels.frame_mut(), &window_size);
 
-            let mut frame = pixels.frame_mut();
-            for pixel in frame.chunks_exact_mut(4) {
-                pixel[0] = 255; // R
-                pixel[1] = 27; // G
-                pixel[2] = 71; // B
-                pixel[3] = 0xff; // A
-            }
-            raycast(&player, &mut raycaster, frame, &window_size);
             pixels.render().unwrap();
             match event {
                 Event::WindowEvent {
@@ -127,16 +128,49 @@ fn main() {
                         is_synthetic,
                     } => match event.physical_key {
                         winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::KeyA) => {
-                            player.angle -= 2;
-                            if player.angle < 0 {
-                                player.angle = 360;
+                            if event.state.is_pressed() {
+                                key_down = "a";
+                            } else {
+                                key_down = "none";
                             }
                         }
-                        _ => {}
+                        winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::KeyD) => {
+                            if event.state.is_pressed() {
+                                key_down = "d";
+                            } else {
+                                key_down = "none";
+                            }
+                        }
+                        winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::KeyW) => {
+                            if event.state.is_pressed() {
+                                key_down = "w";
+                            } else {
+                                key_down = "none";
+                            }
+                        }
+                        winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::KeyS) => {
+                            if event.state.is_pressed() {
+                                key_down = "s";
+                            } else {
+                                key_down = "none";
+                            }
+                        }
+                        _ => key_down = "none",
                     },
                     _ => {}
                 },
                 _ => (),
+            }
+            if key_down == "a" {
+                player.angle -= 1;
+                if player.angle < 0 {
+                    player.angle = 360;
+                }
+            } else if key_down == "d" {
+                player.angle += 1;
+                if player.angle > 360 {
+                    player.angle = 0;
+                }
             }
         })
         .unwrap();
@@ -189,6 +223,7 @@ fn raycast(
     player: &Player,
     ray: &mut Raycaster,
     frame: &mut [u8],
+    //    pixels: &mut Pixels,
     window_size: &PhysicalSize<u32>,
 ) {
     let mut ray_angle = player.angle as f32 - player.half_fov as f32;
